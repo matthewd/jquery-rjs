@@ -1,13 +1,23 @@
 require 'action_view/helpers/rendering_helper'
 
-ActionView::Helpers::RenderingHelper.module_eval do
-  def render_with_update(options = {}, locals = {}, &block)
+module JqueryRjs::RenderingHelper
+  method_name = "render#{'_with_update' if RUBY_VERSION < '2'}"
+  define_method(method_name) do |options = {}, locals = {}, &block|
     if options == :update
       update_page(&block)
     else
-      render_without_update(options, locals, &block)
+      args = options, locals, block
+      RUBY_VERSION < '2' ? render_without_update(*args) : super(*args)
     end
   end
-  
-  alias_method_chain :render, :update
+end
+
+
+if RUBY_VERSION < '2'
+  ActionView::Helpers::RenderingHelper.module_eval do
+    include JqueryRjs::RenderingHelper
+    alias_method_chain :render, :update
+  end
+else
+  ActionView::Helpers::RenderingHelper.prepend(JqueryRjs::RenderingHelper)
 end

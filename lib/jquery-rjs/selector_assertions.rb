@@ -20,7 +20,7 @@ end
 # Under MIT and/or CC By license.
 #++
 
-(defined?(ActionDispatch::Assertions::SelectorAssertions) ? ActionDispatch::Assertions::SelectorAssertions : Rails::Dom::Testing::Assertions::SelectorAssertions).module_eval do
+module JqueryRjs::SelectorAssertions
   # Selects content from the RJS response.
   #
   # === Narrowing down
@@ -158,9 +158,9 @@ end
       flunk args.shift || flunk_message
     end
   end
-  
+
   protected
-  
+
   def jquery_id(id) #:nodoc:
     id.to_s.count('#.*,>+~:[/ ') == 0 ? "##{id}" : id
   end
@@ -197,7 +197,7 @@ end
 
   # +assert_select+ and +css_select+ call this to obtain the content in the HTML
   # page, or from all the RJS statements, depending on the type of response.
-  def response_from_page_with_rjs
+  define_method("response_from_page#{'_with_rjs' if RUBY_VERSION < '2'}") do
     content_type = @response.content_type
 
     if content_type && Mime[:js] =~ content_type
@@ -216,10 +216,9 @@ end
 
       root
     else
-      response_from_page_without_rjs
+      RUBY_VERSION < '2' ? response_from_page_without_rjs : super()
     end
   end
-  alias_method_chain :response_from_page, :rjs
 
   # Unescapes a RJS string.
   def unescape_rjs(rjs_string)
@@ -233,4 +232,19 @@ end
     unescaped.gsub!(RJS_PATTERN_UNICODE_ESCAPED_CHAR) {|u| [$1.hex].pack('U*')}
     unescaped
   end
+end
+
+module_to_patch = if defined?(ActionDispatch::Assertions::SelectorAssertions)
+                    ActionDispatch::Assertions::SelectorAssertions
+                  else
+                    Rails::Dom::Testing::Assertions::SelectorAssertions
+                  end
+
+if RUBY_VERSION < '2'
+  module_to_patch.module_eval do
+    include JqueryRjs::SelectorAssertions
+    alias_method_chain :response_from_page, :rjs
+  end
+else
+  module_to_patch.prepend(JqueryRjs::SelectorAssertions)
 end
