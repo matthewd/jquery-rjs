@@ -6,6 +6,11 @@ unless defined? JQUERY_VAR
 end
 
 module JqueryRjs
+  def use_alias_method_chain?
+    @use_alias_method_chain ||= RUBY_VERSION < '2'
+  end
+  module_function :use_alias_method_chain?
+
   class Engine < Rails::Engine
     initializer 'jquery-rjs.initialize' do
       ActiveSupport.on_load(:action_controller) do
