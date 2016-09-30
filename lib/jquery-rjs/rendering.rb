@@ -1,13 +1,23 @@
 require 'action_view/helpers/rendering_helper'
 
-ActionView::Helpers::RenderingHelper.module_eval do
-  def render_with_update(options = {}, locals = {}, &block)
+module JqueryRjs::RenderingHelper
+  method_name = "render#{'_with_update' if JqueryRjs.use_alias_method_chain?}"
+  define_method(method_name) do |options = {}, locals = {}, &block|
     if options == :update
       update_page(&block)
     else
-      render_without_update(options, locals, &block)
+      args = options, locals, block
+      JqueryRjs.use_alias_method_chain? ? render_without_update(*args) : super(*args)
     end
   end
-  
-  alias_method_chain :render, :update
+end
+
+
+if JqueryRjs.use_alias_method_chain?
+  ActionView::Helpers::RenderingHelper.module_eval do
+    include JqueryRjs::RenderingHelper
+    alias_method_chain :render, :update
+  end
+else
+  ActionView::Helpers::RenderingHelper.prepend(JqueryRjs::RenderingHelper)
 end
