@@ -219,7 +219,8 @@ end
       response_from_page_without_rjs
     end
   end
-  alias_method_chain :response_from_page, :rjs
+  alias_method :response_from_page_without_rjs, :response_from_page
+  alias_method :response_from_page, :response_from_page_with_rjs
 
   # Unescapes a RJS string.
   def unescape_rjs(rjs_string)
